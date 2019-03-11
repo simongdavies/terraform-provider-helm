@@ -760,6 +760,16 @@ func (l *chartLocator) locateChartPathInRepository() (string, error) {
 		}
 	}
 
+	if _, err := os.Stat(l.meta.Settings.Home.Repository()); os.IsNotExist(err) {
+		if err := os.MkdirAll(l.meta.Settings.Home.Repository(), 0744); err != nil {
+			return "", fmt.Errorf("failed to create repository folder, %s", err)
+		}
+		r := repo.NewRepoFile()
+		if err := r.WriteFile(l.meta.Settings.Home.RepositoryFile(), 0744); err != nil {
+			return "", fmt.Errorf("failed to create repo file, %s", err)
+		}
+	}
+
 	return l.downloadChart(ref)
 }
 

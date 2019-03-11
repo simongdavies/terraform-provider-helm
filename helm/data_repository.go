@@ -3,6 +3,7 @@ package helm
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"k8s.io/helm/pkg/getter"
@@ -75,6 +76,26 @@ func dataRepository() *schema.Resource {
 
 func dataRepositoryRead(d *schema.ResourceData, meta interface{}) error {
 	m := meta.(*Meta)
+
+	// this ensures that the repostory folder exists
+
+	if _, err := os.Stat(m.Settings.Home.Repository()); os.IsNotExist(err) {
+		if err := os.MkdirAll(m.Settings.Home.Repository(), 0744); err != nil {
+			return fmt.Errorf("failed to create repository folder, %s", err)
+		}
+		r := repo.NewRepoFile()
+		if err := r.WriteFile(m.Settings.Home.RepositoryFile(), 0744); err != nil {
+			return fmt.Errorf("failed to create repo file, %s", err)
+		}
+	}
+
+	// This ensures that the cache folder exists
+
+	if _, err := os.Stat(m.Settings.Home.Cache()); os.IsNotExist(err) {
+		if err := os.MkdirAll(m.Settings.Home.Cache(), 0744); err != nil {
+			return fmt.Errorf("failed to create cache folder, %s", err)
+		}
+	}
 
 	name := d.Get("name").(string)
 	err := addRepository(m,
